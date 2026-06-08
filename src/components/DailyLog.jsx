@@ -37,24 +37,47 @@ export default function DailyLog({ virtueScores }) {
         .map(v => `${v.emoji} ${v.name}: ${v.score > 0 ? v.score.toFixed(1) + '점' : '미측정'}`)
         .join('\n')
 
-      const prompt = `당신은 "육각형 인간" 자기계발 코치입니다.
-사용자의 현재 덕목 점수:
+      const lowScores = virtueScores
+        .filter(v => v.score > 0 && v.score < 6)
+        .map(v => `${v.emoji} ${v.name} (${v.score.toFixed(1)}점)`)
+        .join(', ')
+
+      const unmeasured = virtueScores
+        .filter(v => v.score === 0)
+        .map(v => `${v.emoji} ${v.name}`)
+        .join(', ')
+
+      const prompt = `당신은 "육각형 인간" 자기계발 코치입니다. 사용자의 WHY는 "끝까지 버티며 곁을 지켜, 소중한 이들이 평온하게 살게 한다"입니다.
+
+현재 덕목 점수:
 ${scoresContext}
+${lowScores ? `\n낮은 점수 항목 (6점 미만): ${lowScores}` : ''}
+${unmeasured ? `미측정 항목: ${unmeasured}` : ''}
 
 오늘 사용자가 한 일:
 ${text}
 
-위 내용을 분석해서 아래 형식으로 응답해주세요. 반드시 JSON 형식으로만 응답하고 다른 텍스트는 포함하지 마세요:
+분석 규칙:
+1. 오늘 한 일과 연결해서 어떤 덕목이 향상/부족했는지 파악
+2. 내일 할 일은 반드시 구체적으로 작성 (예: "헬스장에서 유연성 측정 - 앉아서 윗몸굽히기 3회 평균값 기록", "자기 전 10분 독서로 학습량 점수 올리기")
+3. 낮은 점수나 미측정 항목을 우선적으로 내일 할 일에 반영
+4. 오늘 이미 한 것과 겹치지 않게 추천
+
+반드시 JSON 형식으로만 응답하고 다른 텍스트는 포함하지 마세요:
 
 {
   "summary": "오늘 하루 한 줄 요약 (20자 이내)",
   "virtueImpact": [
     {"virtue": "덕목명", "emoji": "이모지", "impact": "positive/negative/neutral", "reason": "이유 (20자 이내)"}
   ],
-  "strengths": ["잘한 점 1", "잘한 점 2"],
-  "improvements": ["부족한 점 1", "부족한 점 2"],
-  "tomorrow": ["내일 할 일 추천 1", "내일 할 일 추천 2", "내일 할 일 추천 3"],
-  "message": "오늘 하루에 대한 한마디 격려 (WHY: 끝까지 버티며 곁을 지켜, 소중한 이들이 평온하게 살게 한다 기반으로)"
+  "strengths": ["구체적으로 잘한 점 1", "구체적으로 잘한 점 2"],
+  "improvements": ["구체적으로 부족한 점 1", "구체적으로 부족한 점 2"],
+  "tomorrow": [
+    {"action": "내일 할 구체적 행동 (언제, 무엇을, 얼마나)", "virtue": "관련 덕목명", "emoji": "이모지", "why": "이 행동이 필요한 이유 (15자 이내)"},
+    {"action": "내일 할 구체적 행동 2", "virtue": "관련 덕목명", "emoji": "이모지", "why": "이유"},
+    {"action": "내일 할 구체적 행동 3", "virtue": "관련 덕목명", "emoji": "이모지", "why": "이유"}
+  ],
+  "message": "오늘 하루에 대한 한마디 격려 (WHY 기반, 따뜻하고 구체적으로)"
 }`
 
       const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -206,9 +229,24 @@ ${text}
 
               <div className="analysis-section">
                 <h4>내일 할 일</h4>
-                <ul className="analysis-list tomorrow">
-                  {analysis.tomorrow?.map((s, i) => <li key={i}><span className="tomorrow-num">{i + 1}</span>{s}</li>)}
-                </ul>
+                <div className="tomorrow-cards">
+                  {analysis.tomorrow?.map((item, i) => {
+                    const isObj = typeof item === 'object'
+                    return (
+                      <div key={i} className="tomorrow-card">
+                        <div className="tomorrow-card-top">
+                          <span className="tomorrow-card-num">{i + 1}</span>
+                          <span className="tomorrow-card-emoji">{isObj ? item.emoji : '✦'}</span>
+                          <span className="tomorrow-card-virtue">{isObj ? item.virtue : ''}</span>
+                        </div>
+                        <p className="tomorrow-card-action">{isObj ? item.action : item}</p>
+                        {isObj && item.why && (
+                          <p className="tomorrow-card-why">→ {item.why}</p>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
 
               <div className="analysis-message">

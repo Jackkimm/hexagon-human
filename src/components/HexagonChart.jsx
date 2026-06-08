@@ -1,8 +1,8 @@
 export default function HexagonChart({ virtueScores }) {
-  const size = 280
+  const size = 320
   const cx = size / 2
   const cy = size / 2
-  const maxR = 100
+  const maxR = 90
   const levels = [2, 4, 6, 8, 10]
   const n = virtueScores.length
 
@@ -17,7 +17,7 @@ export default function HexagonChart({ virtueScores }) {
 
   function getLabelPoint(index) {
     const angle = (Math.PI * 2 * index) / n - Math.PI / 2
-    const r = maxR + 28
+    const r = maxR + 32
     return {
       x: cx + r * Math.cos(angle),
       y: cy + r * Math.sin(angle),

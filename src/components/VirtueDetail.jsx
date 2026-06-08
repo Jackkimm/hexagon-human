@@ -4,9 +4,6 @@ export default function VirtueDetail({ virtue, scores, onUpdate, onBack, virtueS
   if (!virtue) return null
 
   function getScore(item) {
-    const val = scores[item.id]
-    if (val === null || val === undefined || val === '') return null
-    if (item.inputType === 'select') return parseFloat(val)
     if (item.inputType === 'composite') {
       const subScores = item.subItems.map(sub => {
         const subVal = scores[`${item.id}_${sub.id}`]
@@ -29,6 +26,9 @@ export default function VirtueDetail({ virtue, scores, onUpdate, onBack, virtueS
       if (subScores.length === 0) return null
       return Math.round((subScores.reduce((a, b) => a + b, 0) / subScores.length) * 10) / 10
     }
+    const val = scores[item.id]
+    if (val === null || val === undefined || val === '') return null
+    if (item.inputType === 'select') return parseFloat(val)
     return calculateItemScore(item, val)
   }
 

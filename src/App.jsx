@@ -101,7 +101,16 @@ export default function App() {
                 const vs = virtueScores.find(v => v.id === virtue.id)
                 const score = vs?.score || 0
                 const itemScores = scores[virtue.id] || {}
-                const filled = Object.values(itemScores).filter(v => v !== null && v !== '').length
+                const filled = virtue.items.filter(item => {
+                  if (item.inputType === 'composite') {
+                    return item.subItems.some(sub => {
+                      const v = itemScores[`${item.id}_${sub.id}`]
+                      return v !== null && v !== undefined && v !== ''
+                    })
+                  }
+                  const v = itemScores[item.id]
+                  return v !== null && v !== undefined && v !== ''
+                }).length
                 const total = virtue.items.length
 
                 return (

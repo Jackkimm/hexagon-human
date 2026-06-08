@@ -556,11 +556,46 @@ export function calculateItemScore(item, value) {
   return 2
 }
 
+export function calculateCompositeScore(item, scores) {
+  if (item.inputType !== 'composite') return null
+  const subScores = item.subItems.map(sub => {
+    const subVal = scores[`${item.id}_${sub.id}`]
+    if (!subVal && subVal !== 0) return null
+    const v = parseFloat(subVal)
+    if (isNaN(v)) return null
+    if (sub.isInverse) {
+      for (const level of sub.levels) {
+        if (v <= level.max) return level.score
+      }
+      return sub.levels[sub.levels.length - 1].score
+    }
+    if (sub.isSelect) return v
+    const sorted = [...sub.levels].sort((a, b) => b.min - a.min)
+    for (const level of sorted) {
+      if (v >= level.min) return level.score
+    }
+    return 2
+  }).filter(s => s !== null)
+  if (subScores.length === 0) return null
+  return Math.round((subScores.reduce((a, b) => a + b, 0) / subScores.length) * 10) / 10
+}
+
 export function calculateVirtueScore(virtue, scores) {
   const validScores = virtue.items.map(item => {
-    const score = scores[item.id]
-    if (score === null || score === undefined) return null
-    return { score: parseFloat(score), weight: item.weight || 1 }
+    let score
+    if (item.inputType === 'composite') {
+      score = calculateCompositeScore(item, scores)
+    } else {
+      const raw = scores[item.id]
+      if (raw === null || raw === undefined || raw === '') return null
+      if (item.inputType === 'select') {
+        score = parseFloat(raw)
+      } else {
+        score = calculateItemScore(item, raw)
+      }
+    }
+    if (score === null || score === undefined || isNaN(score)) return null
+    return { score, weight: item.weight || 1 }
   }).filter(s => s !== null)
 
   if (validScores.length === 0) return 0

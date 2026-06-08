@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { VIRTUES, calculateVirtueScore } from './data'
 import HexagonChart from './components/HexagonChart'
 import VirtueDetail from './components/VirtueDetail'
+import DailyLog from './components/DailyLog'
 import './index.css'
 
 const STORAGE_KEY = 'hexagon_scores_v1'
@@ -15,6 +16,7 @@ export default function App() {
     } catch { return {} }
   })
   const [activeVirtue, setActiveVirtue] = useState(null)
+  const [activeTab, setActiveTab] = useState('dashboard')
   const [lastReset, setLastReset] = useState(() => {
     return localStorage.getItem(YEAR_KEY) || new Date().getFullYear().toString()
   })
@@ -67,10 +69,24 @@ export default function App() {
           </div>
           <button className="reset-btn" onClick={handleReset}>새해 재설정</button>
         </div>
+        <div className="main-tabs">
+          <button
+            className={`main-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('dashboard'); setActiveVirtue(null) }}
+          >대시보드</button>
+          <button
+            className={`main-tab ${activeTab === 'daily' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('daily'); setActiveVirtue(null) }}
+          >일일 기록</button>
+        </div>
       </header>
 
       <main className="app-main">
-        {!activeVirtue ? (
+        {activeTab === 'daily' ? (
+          <div style={{ maxWidth: 680, margin: '0 auto' }}>
+            <DailyLog virtueScores={virtueScores} />
+          </div>
+        ) : !activeVirtue ? (
           <div className="dashboard">
             <div className="score-overview">
               <div className="overall-score">
